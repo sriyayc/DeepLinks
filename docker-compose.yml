@@ -1,0 +1,22 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./data/cybercart.db
+    volumes:
+      - ./backend/data:/app/data
+
+  oauth:
+    build: ./oauth-server
+    ports:
+      - "9000:9000"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+      - oauth
