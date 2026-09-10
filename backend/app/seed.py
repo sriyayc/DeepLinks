@@ -3,6 +3,7 @@ import random
 
 from .database import Base, engine, SessionLocal
 from .models import Participant, Product, Order, OrderItem
+from .product_seed import seed_products
 
 PARTICIPANT_START = 1001
 PARTICIPANT_END = 1120  # inclusive -> 120 participants
@@ -20,14 +21,8 @@ def seed():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
 
-    if db.query(Product).count() == 0:
-        db.add_all([
-            Product(name="Security Handbook", description="A fictional application-security handbook.", price=699, image="/images/book.svg"),
-            Product(name="USB Lab Kit", description="A fictional hardware lab kit.", price=999, image="/images/kit.svg"),
-            Product(name="Network Adapter", description="A fictional network-testing adapter.", price=1499, image="/images/adapter.svg"),
-            Product(name="Cyber Laptop", description="A fictional workshop laptop.", price=75000, image="/images/laptop.svg"),
-        ])
-        db.commit()
+    seed_products(db)
+    db.commit()
 
     products = db.query(Product).all()
 

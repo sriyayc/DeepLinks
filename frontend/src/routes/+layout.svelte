@@ -11,6 +11,7 @@
   <a class="brand" href="/">CyberCart</a>
   <div class="navlinks">
     <a href="/products">Products</a>
+    <a href="/search">Search</a>
     <a href="/orders">Orders</a>
     <a href="/agent">AI Agent</a>
     <a href="/lab">Workshop</a>
