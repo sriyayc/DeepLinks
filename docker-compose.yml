@@ -18,3 +18,11 @@ services:
     depends_on:
       - backend
       - oauth
+
+  # Task 4 — CSRF attacker site (different origin from shop)
+  # Visit http://localhost:7000      for the silent phishing page
+  # Visit http://localhost:7000/demo for the transparent workshop demo
+  attacker-site:
+    build: ./attacker-site
+    ports:
+      - "7000:7000"
