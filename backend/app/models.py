@@ -1,12 +1,23 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text, DateTime, func
 from .database import Base
 
-class User(Base):
-    __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True)
-    username = Column(String(50), unique=True, nullable=False)
-    password = Column(String(100), nullable=False)  # Demo-only seed data.
+class Participant(Base):
+    __tablename__ = "participants"
+
+    id = Column(Integer, primary_key=True, autoincrement=False)  # seeded 1001-1120
+    display_name = Column(String(50), nullable=False)
+    access_token = Column(String(64), unique=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserSession(Base):
+    __tablename__ = "sessions"
+
+    session_id = Column(String(64), primary_key=True)
+    participant_id = Column(Integer, ForeignKey("participants.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 
 class Product(Base):
     __tablename__ = "products"
@@ -17,14 +28,16 @@ class Product(Base):
     price = Column(Float, nullable=False)
     image = Column(String(255), nullable=True)
 
+
 class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    participant_id = Column(Integer, ForeignKey("participants.id"), nullable=False)
     status = Column(String(30), nullable=False, default="Processing")
     total = Column(Float, nullable=False)
     shipping_address = Column(String(255), nullable=False)
+
 
 class OrderItem(Base):
     __tablename__ = "order_items"
@@ -33,3 +46,13 @@ class OrderItem(Base):
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     quantity = Column(Integer, nullable=False, default=1)
+
+
+class ChatLog(Base):
+    __tablename__ = "chat_logs"
+
+    id = Column(Integer, primary_key=True)
+    participant_id = Column(Integer, ForeignKey("participants.id"), nullable=True)
+    question_key = Column(String(50), nullable=False)
+    response = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -3,10 +3,8 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
-    environment:
-      - DATABASE_URL=sqlite:///./data/cybercart.db
-    volumes:
-      - ./backend/data:/app/data
+    env_file:
+      - ./backend/.env
 
   oauth:
     build: ./oauth-server

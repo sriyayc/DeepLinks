@@ -5,15 +5,8 @@
   let error = "";
 
   onMount(async () => {
-    const raw = localStorage.getItem("cybercart_user");
-    if (!raw) {
-      error = "Please log in first.";
-      return;
-    }
-
-    const user = JSON.parse(raw);
     const res = await fetch("http://localhost:8000/api/orders", {
-      headers: {"X-User-ID": String(user.id)}
+      credentials: "include",
     });
 
     if (res.ok) orders = await res.json();

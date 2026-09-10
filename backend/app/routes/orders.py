@@ -6,12 +6,13 @@ from ..auth import get_current_user
 
 router = APIRouter(prefix="/api/orders", tags=["orders"])
 
+
 @router.get("")
 def list_my_orders(
     db: Session = Depends(get_db),
     user = Depends(get_current_user),
 ):
-    orders = db.query(Order).filter(Order.user_id == user.id).all()
+    orders = db.query(Order).filter(Order.participant_id == user.id).all()
     return [
         {
             "id": o.id,
@@ -22,16 +23,16 @@ def list_my_orders(
         for o in orders
     ]
 
+
 @router.get("/{order_id}")
 def get_order(
     order_id: int,
     db: Session = Depends(get_db),
     user = Depends(get_current_user),
 ):
-    # Secure baseline: ownership is checked here.
     order = (
         db.query(Order)
-        .filter(Order.id == order_id, Order.user_id == user.id)
+        .filter(Order.id == order_id, Order.participant_id == user.id)
         .first()
     )
     if not order:
