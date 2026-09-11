@@ -3,6 +3,8 @@ __pycache__/
 .venv/
 venv/
 .env
+backend/participant_logins.csv
+backend/package-lock.json
 *.db
 node_modules/
 .svelte-kit/

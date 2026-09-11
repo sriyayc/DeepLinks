@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import Order, OrderItem, Product
@@ -27,15 +27,19 @@ def list_my_orders(
 @router.get("/{order_id}")
 def get_order(
     order_id: int,
+    strict_authz: bool = Query(
+        default=False,
+        description="Enable the ownership check for the workshop comparison.",
+    ),
     db: Session = Depends(get_db),
     user = Depends(get_current_user),
 ):
-    order = (
-        db.query(Order)
-        .filter(Order.id == order_id, Order.participant_id == user.id)
-        .first()
-    )
+    # INTENTIONAL IDOR: ownership is not checked unless strict mode is requested.
+    order = db.query(Order).filter(Order.id == order_id).first()
     if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    if strict_authz and order.participant_id != user.id:
         raise HTTPException(status_code=404, detail="Order not found")
 
     items = (
@@ -47,6 +51,7 @@ def get_order(
 
     return {
         "id": order.id,
+        "participant_id": order.participant_id,
         "status": order.status,
         "total": order.total,
         "shipping_address": order.shipping_address,
