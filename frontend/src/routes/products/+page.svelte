@@ -7,6 +7,7 @@
   import { productPrice } from "$lib/productPrice";
   import { paginate } from "$lib/pagination";
   import { publicApiBaseUrl } from "$lib/api";
+  import AddToCartButton from "$lib/AddToCartButton.svelte";
 
   type Product = {
     id: number;
@@ -88,7 +89,10 @@
           <p>{product.description}</p>
           <strong>{productPrice(product)}</strong>
         </div>
-        <a class="button" href={`/products/${product.id}`}>View product</a>
+        <div class="product-actions">
+          <a class="button secondary" href={`/products/${product.id}`}>View product</a>
+          <AddToCartButton productId={product.id} />
+        </div>
       </article>
     {/each}
   </section>
@@ -116,5 +120,16 @@
     border-color: #e8edf7;
     background: #e8edf7;
     color: #0a0d13;
+  }
+
+  .product-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: flex-start;
+  }
+
+  .product-actions :global(.button.secondary) {
+    margin-left: 0;
   }
 </style>

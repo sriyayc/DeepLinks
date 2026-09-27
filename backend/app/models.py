@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text, DateTime, func
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, Text, DateTime, UniqueConstraint, func
 from .database import Base
 
 
@@ -44,6 +44,18 @@ class OrderItem(Base):
 
     id = Column(Integer, primary_key=True)
     order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
+    quantity = Column(Integer, nullable=False, default=1)
+
+
+class CartItem(Base):
+    __tablename__ = "cart_items"
+    __table_args__ = (
+        UniqueConstraint("participant_id", "product_id", name="uq_cart_participant_product"),
+    )
+
+    id = Column(Integer, primary_key=True)
+    participant_id = Column(Integer, ForeignKey("participants.id"), nullable=False, index=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False)
     quantity = Column(Integer, nullable=False, default=1)
 

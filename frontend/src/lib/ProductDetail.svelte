@@ -4,6 +4,7 @@
   import ProductImage from "$lib/ProductImage.svelte";
   import { productPrice } from "$lib/productPrice";
   import { publicApiBaseUrl } from "$lib/api";
+  import AddToCartButton from "$lib/AddToCartButton.svelte";
 
   type Product = {
     id: number;
@@ -48,8 +49,7 @@
       <h1>{product.name}</h1>
       <p>{product.description}</p>
       <h2>{productPrice(product)}</h2>
-      <button class="button" disabled>Add to cart</button>
-      <p class="muted small">Cart actions are intentionally not implemented in the base.</p>
+      <AddToCartButton productId={product.id} />
     </div>
   </section>
 {:else}

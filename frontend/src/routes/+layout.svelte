@@ -1,5 +1,6 @@
 <script lang="ts">
   import "../styles.css";
+  import AuthControls from "$lib/AuthControls.svelte";
 </script>
 
 <svelte:head>
@@ -10,11 +11,14 @@
 <nav class="nav">
   <a class="brand" href="/">CyberCart</a>
   <div class="navlinks">
-    <a href="/products">Products</a>
-    <a href="/search">Search</a>
-    <a href="/orders">Orders</a>
-    <a href="/agent">AI Agent</a>
-    <a href="/lab">Workshop</a>
+    <div class="primary-links">
+      <a href="/products">Products</a>
+      <a href="/search">Search</a>
+      <a href="/orders">Orders</a>
+      <a href="/agent">AI Agent</a>
+      <a href="/lab">Workshop</a>
+    </div>
+    <AuthControls />
   </div>
 </nav>
 
