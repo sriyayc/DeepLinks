@@ -33,9 +33,16 @@ a {
 
 .navlinks {
   display: flex;
+  align-items: center;
   gap: 1.2rem;
   color: #aab4c6;
   font-size: 0.92rem;
+}
+
+.primary-links {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
 }
 
 .navlinks a:hover {
@@ -218,7 +225,11 @@ dd {
     grid-template-columns: 1fr;
   }
 
-  .navlinks {
+  .primary-links {
     display: none;
+  }
+
+  .navlinks {
+    display: flex;
   }
 }

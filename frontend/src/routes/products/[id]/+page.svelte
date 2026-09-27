@@ -2,5 +2,4 @@
   import ProductDetail from "$lib/ProductDetail.svelte";
 </script>
 
-<!-- Backwards-compatible alias for links from the starter framework. -->
 <ProductDetail />

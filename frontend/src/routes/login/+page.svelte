@@ -2,6 +2,7 @@
   import { page } from "$app/state";
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
+  import { publicApiBaseUrl } from "$lib/api";
 
   let message = "Logging you in...";
 
@@ -12,13 +13,14 @@
       return;
     }
 
-    const res = await fetch(`http://localhost:8000/api/login?token=${encodeURIComponent(token)}`, {
+    const res = await fetch(`${publicApiBaseUrl}/api/login?token=${encodeURIComponent(token)}`, {
       credentials: "include",
     });
 
     if (res.ok) {
       const data = await res.json();
       message = `Logged in as ${data.display_name}`;
+      window.dispatchEvent(new CustomEvent("auth-changed"));
       goto("/orders");
     } else {
       const data = await res.json();
