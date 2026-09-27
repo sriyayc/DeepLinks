@@ -44,3 +44,20 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
         secure=settings.SESSION_COOKIE_SECURE,
     )
     return {"message": "Logged out"}
+
+
+@router.get("/lab/csrf-status")
+def csrf_status():
+    """Describe the cookie policy used by the CSRF workshop comparison."""
+    samesite = settings.SESSION_COOKIE_SAMESITE
+    vulnerable = samesite == "none"
+    return {
+        "samesite": samesite,
+        "secure": settings.SESSION_COOKIE_SECURE,
+        "vulnerable": vulnerable,
+        "status": (
+            "VULNERABLE — SameSite=None permits cross-site cookie requests"
+            if vulnerable
+            else f"PROTECTED — SameSite={samesite} blocks cross-site form POSTs"
+        ),
+    }

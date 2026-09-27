@@ -1,6 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import { onMount } from "svelte";
+  import { publicApiBaseUrl } from "$lib/api";
 
   let order: any = null;
   let error = "";
@@ -9,7 +10,7 @@
     const strictAuthz = page.url.searchParams.get("strict_authz") === "true";
     const strictAuthzQuery = strictAuthz ? "?strict_authz=true" : "";
     const res = await fetch(
-      `http://localhost:8000/api/orders/${page.params.id}${strictAuthzQuery}`,
+      `${publicApiBaseUrl}/api/orders/${page.params.id}${strictAuthzQuery}`,
       { credentials: "include" }
     );
 

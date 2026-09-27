@@ -23,3 +23,8 @@ services:
     depends_on:
       - backend
       - oauth
+
+  attacker-site:
+    build: ./attacker-site
+    ports:
+      - "7000:7000"
