@@ -1,14 +1,15 @@
 """
-Attacker Site — Task 4: CSRF Demo  |  Port: 7000
+Attacker Site — Task 4: CSRF Demo  |  Port: 7001
 
 GET /       Convincing phishing page. Auto-submits CSRF in a hidden iframe.
 GET /demo   Workshop/transparent mode. Step-by-step explanation + manual trigger.
 
 CSRF target:  POST http://localhost:8000/api/orders/shipping-address
               Body (form-urlencoded): shipping_address=666 Attacker Avenue
-              Auth: session_id cookie (SameSite=None -> sent cross-origin automatically)
+              Auth: session_id cookie, with no CSRF token
 
-Fix: SESSION_COOKIE_SAMESITE=lax  in backend .env
+Fix: require a per-session CSRF token. SameSite is an additional defence when
+the attacker and shop are on different sites.
 """
 
 from fastapi import FastAPI
@@ -355,14 +356,14 @@ DEMO_HTML = """<!DOCTYPE html>
 <body>
   <span class="eyebrow">ATTACKER SITE / LAB</span>
   <h1>Task 4 — CSRF Attack Demo</h1>
-  <p class="subtitle"><code>localhost:7000</code> &rarr; targeting <code>localhost:8000</code></p>
+  <p class="subtitle"><code>localhost:7001</code> &rarr; targeting <code>localhost:8000</code></p>
 
   <div class="box red">
     <h2>🧭 Attack Flow</h2>
     <ol>
       <li>Victim logs into CyberCart at <code>localhost:5173</code> -&gt; gets <code>session_id</code> cookie</li>
-      <li>Cookie has <code>SameSite=None</code> -&gt; browser will send it on ANY origin's request</li>
-      <li>Victim visits this page (<code>localhost:7000</code>) - a DIFFERENT origin</li>
+      <li>Victim visits this page (<code>localhost:7001</code>) - a different origin</li>
+      <li>Both origins use <code>localhost</code>, so they are still same-site and a Lax cookie is sent</li>
       <li>This page submits a hidden form to <code>POST /api/orders/shipping-address</code></li>
       <li>Browser automatically includes <code>session_id</code> cookie</li>
       <li>Backend processes it as the victim -&gt; shipping address changed!</li>
@@ -401,10 +402,10 @@ shipping_address=ATTACKER_ADDRESS_PLACEHOLDER</pre>
 
   <div class="box green">
     <h2>🛡️ The Fix</h2>
-    <p style="font-size:0.88rem; opacity:0.85; margin-bottom:0.4rem;">In <code>backend/.env</code>, change:</p>
-    <pre>SESSION_COOKIE_SAMESITE=lax
-SESSION_COOKIE_SECURE=false</pre>
-    <p style="font-size:0.88rem; opacity:0.75; margin-top:0.4rem;">With SameSite=Lax, browser will NOT send cookie on cross-origin POST -&gt; 401 Unauthorized.</p>
+    <p style="font-size:0.88rem; opacity:0.85; margin-bottom:0.4rem;">Generate a per-session CSRF token, include it in trusted forms, and reject state-changing requests whose token is missing or invalid.</p>
+    <pre>if submitted_csrf_token != session.csrf_token:
+    return 403</pre>
+    <p style="font-size:0.88rem; opacity:0.75; margin-top:0.4rem;"><code>SameSite=Lax</code> is useful additional protection when the attacker is on a genuinely different site such as <code>evil.local</code>.</p>
     <p style="font-size:0.88rem; margin-top:0.6rem;">Check current status: <a href="BACKEND_PLACEHOLDER/api/lab/csrf-status" target="_blank">/api/lab/csrf-status</a></p>
   </div>
 

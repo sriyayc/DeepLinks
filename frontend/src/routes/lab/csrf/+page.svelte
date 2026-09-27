@@ -42,12 +42,10 @@
 {#if loading}
   <p class="muted">Loading status…</p>
 {:else}
-  <div class="notice" class:vulnerable={csrfStatus?.vulnerable} class:protected={csrfStatus && !csrfStatus.vulnerable}>
+  <div class="notice" class:vulnerable={csrfStatus?.vulnerable}>
     {#if csrfStatus?.vulnerable}
-      <strong>⚠ VULNERABLE COOKIE MODE</strong> —
+      <strong>⚠ VULNERABLE ENDPOINT</strong> — no CSRF token;
       <code>SameSite={csrfStatus.samesite}</code>, <code>Secure={String(csrfStatus.secure)}</code>
-    {:else if csrfStatus}
-      <strong>✓ PROTECTED COOKIE MODE</strong> — <code>SameSite={csrfStatus.samesite}</code>
     {:else}
       Could not fetch backend status.
     {/if}
@@ -77,8 +75,8 @@
     <span class="badge">STEP 2</span>
     <h2>Visit the attacker</h2>
     <p>The phishing page silently submits a cross-origin form with a replacement address.</p>
-    <a class="button" href="http://localhost:7000" target="_blank" rel="noreferrer">Open phishing page ↗</a>
-    <a class="button secondary" href="http://localhost:7000/demo" target="_blank" rel="noreferrer">Demo mode ↗</a>
+    <a class="button" href="http://localhost:7001" target="_blank" rel="noreferrer">Open phishing page ↗</a>
+    <a class="button secondary" href="http://localhost:7001/demo" target="_blank" rel="noreferrer">Demo mode ↗</a>
   </article>
 
   <article class="card">
@@ -129,8 +127,4 @@
     background: #1a0d0d;
   }
 
-  .protected {
-    border-color: #3fb950;
-    background: #0d1a0d;
-  }
 </style>

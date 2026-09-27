@@ -48,16 +48,12 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
 
 @router.get("/lab/csrf-status")
 def csrf_status():
-    """Describe the cookie policy used by the CSRF workshop comparison."""
+    """Describe the deliberately unprotected state-changing endpoint."""
     samesite = settings.SESSION_COOKIE_SAMESITE
-    vulnerable = samesite == "none"
     return {
         "samesite": samesite,
         "secure": settings.SESSION_COOKIE_SECURE,
-        "vulnerable": vulnerable,
-        "status": (
-            "VULNERABLE — SameSite=None permits cross-site cookie requests"
-            if vulnerable
-            else f"PROTECTED — SameSite={samesite} blocks cross-site form POSTs"
-        ),
+        "vulnerable": True,
+        "cross_site_cookie_allowed": samesite == "none",
+        "status": "VULNERABLE — the shipping-address endpoint requires no CSRF token",
     }

@@ -27,4 +27,4 @@ services:
   attacker-site:
     build: ./attacker-site
     ports:
-      - "7000:7000"
+      - "7001:7001"
