@@ -6,8 +6,10 @@
   let error = "";
 
   onMount(async () => {
+    const strictAuthz = page.url.searchParams.get("strict_authz") === "true";
+    const strictAuthzQuery = strictAuthz ? "?strict_authz=true" : "";
     const res = await fetch(
-      `http://localhost:8000/api/orders/${page.params.id}`,
+      `http://localhost:8000/api/orders/${page.params.id}${strictAuthzQuery}`,
       { credentials: "include" }
     );
 
@@ -25,6 +27,7 @@
     <div>
       <p class="eyebrow">ORDER #{order.id}</p>
       <h1>₹{order.total}</h1>
+      <p>Participant: #{order.participant_id}</p>
       <p>Status: {order.status}</p>
       <p>Shipping: {order.shipping_address}</p>
     </div>
@@ -35,4 +38,8 @@
       {/each}
     </div>
   </section>
+{/if}
+
+{#if page.url.searchParams.get("strict_authz") === "true"}
+  <p class="muted">Strict authorization mode is enabled.</p>
 {/if}

@@ -1,0 +1,4 @@
+-r requirements.txt
+
+# FastAPI/Starlette's TestClient transport for the unittest-based API tests.
+httpx2
