@@ -1,10 +1,16 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import { onMount } from "svelte";
+  import { cart, initializeCart } from "$lib/cart";
   import "../styles.css";
 
   let username = "";
+  let loggingOut = false;
+
+  $: cartCount = $cart.reduce((count, item) => count + item.quantity, 0);
 
   onMount(async () => {
+    initializeCart();
     try {
       const res = await fetch("http://localhost:8000/api/me", { credentials: "include" });
       if (res.ok) {
@@ -13,6 +19,20 @@
       }
     } catch {}
   });
+
+  async function logout() {
+    loggingOut = true;
+    try {
+      await fetch("http://localhost:8000/api/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } finally {
+      username = "";
+      loggingOut = false;
+      goto("/");
+    }
+  }
 </script>
 
 <svelte:head>
@@ -24,14 +44,16 @@
   <a class="brand" href="/">CyberCart</a>
   <div class="navlinks">
     <a href="/products">Products</a>
+    <a href="/cart">My Cart{cartCount ? ` (${cartCount})` : ""}</a>
     <a href="/orders">Orders</a>
     <a href="/agent">AI Agent</a>
     <a href="/lab">Workshop</a>
     {#if username}
-      <!-- username shows here — CSRF attack renames this, making the impact obvious -->
-      <span style="color: #e8edf7; border: 1px solid #3b4658; border-radius: 6px; padding: 0.2rem 0.6rem; font-size: 0.85rem;">
-        👤 {username}
-      </span>
+      <!-- username shows here - CSRF attack renames this, making the impact obvious -->
+      <span class="user-name">{username}</span>
+      <button class="nav-action" on:click={logout} disabled={loggingOut}>
+        {loggingOut ? "Logging out..." : "Logout"}
+      </button>
     {:else}
       <a href="/login" style="color: #aab4c6;">Login</a>
     {/if}

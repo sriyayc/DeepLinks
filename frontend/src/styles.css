@@ -33,9 +33,40 @@ a {
 
 .navlinks {
   display: flex;
+  align-items: center;
   gap: 1.2rem;
   color: #aab4c6;
   font-size: 0.92rem;
+}
+
+.user-name {
+  color: #e8edf7;
+  border: 1px solid #3b4658;
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.nav-action,
+.text-button,
+.remove-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #aab4c6;
+  font: inherit;
+  cursor: pointer;
+}
+
+.nav-action:hover,
+.text-button:hover,
+.remove-button:hover {
+  color: white;
+}
+
+.nav-action:disabled {
+  cursor: wait;
+  opacity: 0.6;
 }
 
 .navlinks a:hover {
@@ -98,6 +129,17 @@ a {
 .product {
   display: grid;
   gap: 1rem;
+}
+
+.product-actions {
+  display: flex;
+  gap: 0.65rem;
+}
+
+.product-actions .button {
+  flex: 1;
+  margin: 0;
+  text-align: center;
 }
 
 .product-image {
@@ -170,6 +212,164 @@ input {
   color: white;
 }
 
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  border: 1px solid #30394a;
+  border-radius: 8px;
+  padding: 0.8rem;
+  background: #0a0e15;
+  color: white;
+  font: inherit;
+}
+
+.page-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.page-heading h1 {
+  margin: 0.35rem 0 0;
+}
+
+.cart-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 2rem;
+  align-items: start;
+}
+
+.cart-items {
+  border-top: 1px solid #222a38;
+}
+
+.cart-row {
+  display: grid;
+  grid-template-columns: 54px minmax(140px, 1fr) 116px 90px auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.2rem 0;
+  border-bottom: 1px solid #222a38;
+}
+
+.cart-product-mark {
+  width: 54px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #171e2b;
+  color: #71809b;
+  font-weight: 800;
+}
+
+.cart-product-copy {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.quantity-control {
+  display: grid;
+  grid-template-columns: 34px 44px 34px;
+  height: 36px;
+}
+
+.quantity-control button,
+.quantity-control input {
+  border: 1px solid #30394a;
+  border-radius: 0;
+  padding: 0;
+  background: #0a0e15;
+  color: #e8edf7;
+  text-align: center;
+}
+
+.quantity-control button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.quantity-control button:last-child {
+  border-radius: 0 6px 6px 0;
+}
+
+.quantity-control input {
+  border-left: 0;
+  border-right: 0;
+  appearance: textfield;
+}
+
+.quantity-control input::-webkit-inner-spin-button {
+  appearance: none;
+}
+
+.line-total {
+  text-align: right;
+}
+
+.remove-button {
+  color: #db8790;
+  font-size: 0.82rem;
+}
+
+.checkout-panel {
+  border: 1px solid #222a38;
+  border-radius: 8px;
+  padding: 1.4rem;
+  background: #10151f;
+}
+
+.checkout-panel h2 {
+  margin: 0 0 1.2rem;
+}
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  color: #aab4c6;
+}
+
+.total-line {
+  margin: 0.5rem 0 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #30394a;
+  color: #e8edf7;
+}
+
+.checkout-button {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.checkout-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.error-notice {
+  border-color: #713b42;
+  background: #26151a;
+}
+
+.login-link {
+  display: inline-block;
+  color: #c7d7f2;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state {
+  padding: 4rem 0;
+  border-top: 1px solid #222a38;
+  text-align: center;
+}
+
+.empty-state h2 {
+  margin-top: 0;
+}
+
 .notice {
   margin: 1rem 0;
   padding: 1rem;
@@ -214,11 +414,48 @@ dd {
 }
 
 @media (max-width: 750px) {
-  .grid, .grid.three, .detail {
+  .grid, .grid.three, .detail, .cart-layout {
     grid-template-columns: 1fr;
   }
 
+  .nav {
+    height: auto;
+    align-items: flex-start;
+    gap: 1rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
   .navlinks {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.65rem 1rem;
+  }
+
+  .navlinks a:nth-of-type(3),
+  .navlinks a:nth-of-type(4) {
     display: none;
+  }
+
+  .container {
+    padding-top: 2.5rem;
+  }
+
+  .cart-row {
+    grid-template-columns: 54px 1fr auto;
+  }
+
+  .quantity-control {
+    grid-column: 2;
+  }
+
+  .line-total {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .remove-button {
+    grid-column: 3;
+    grid-row: 2;
   }
 }
