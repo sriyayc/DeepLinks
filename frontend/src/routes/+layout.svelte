@@ -1,6 +1,7 @@
 <script lang="ts">
   import "../styles.css";
   import AuthControls from "$lib/AuthControls.svelte";
+  import ChatWidget from "$lib/ChatWidget.svelte";
 </script>
 
 <svelte:head>
@@ -25,3 +26,6 @@
 <main class="container">
   <slot />
 </main>
+
+<!-- Available throughout the shop; existing /agent inspector remains unchanged. -->
+<ChatWidget />
