@@ -25,3 +25,4 @@
 <main class="container">
   <slot />
 </main>
+{@html '<!-- TODO: remove before launch \u2014 /admin -->'}

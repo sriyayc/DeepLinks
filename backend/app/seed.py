@@ -38,6 +38,14 @@ def seed():
         db.add_all(participants)
         db.commit()
 
+    # Mark a few participants as admins for the privilege-escalation lab.
+    # IDs 1001, 1002, 1003 are the documented admin accounts.
+    ADMIN_IDS = [1001, 1002, 1003]
+    db.query(Participant).filter(Participant.id.in_(ADMIN_IDS)).update(
+        {Participant.role: "admin"}, synchronize_session="fetch"
+    )
+    db.commit()
+
     if db.query(Order).count() == 0:
         participants = db.query(Participant).all()
         order_id = 1

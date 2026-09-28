@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .database import Base, engine
 from .seed import seed
-from .routes import products, users, orders, search, deeplinks, agent, cart
+from .routes import products, users, orders, search, deeplinks, agent, cart, admin
 
 app = FastAPI(
     title="CyberCart Workshop API",
@@ -30,6 +30,7 @@ app.include_router(search.router)
 app.include_router(deeplinks.router)
 app.include_router(agent.router)
 app.include_router(cart.router)
+app.include_router(admin.router)
 
 
 @app.get("/api/health")
