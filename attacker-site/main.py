@@ -12,7 +12,7 @@ Fix: require a per-session CSRF token. SameSite is an additional defence when
 the attacker and shop are on different sites.
 """
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 
 app = FastAPI(title="Attacker Site - CSRF Demo")
@@ -428,3 +428,46 @@ def phishing_page():
 def demo_page():
     """Workshop transparent mode - explains each step."""
     return HTMLResponse(DEMO_HTML)
+
+
+# ---------------------------------------------------------------------------
+# Task 5 — PKCE / open-redirect demo callback
+#
+# This is the "malicious site" for the OAuth lab. It does nothing but log and
+# display whatever the OAuth server redirected here with (i.e. the stolen
+# authorization `code`). It never forwards, replays, or exchanges the code —
+# it's just a transparent sink so the workshop can show that a value meant
+# for CyberCart's own callback landed on a different origin instead.
+# ---------------------------------------------------------------------------
+OAUTH_CALLBACK_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Attacker Site — OAuth Callback Sink</title>
+  <style>
+    body {{ font-family: monospace; background: #0d1117; color: #c9d1d9; padding: 2rem; max-width: 700px; margin: 0 auto; }}
+    h1 {{ color: #f85149; }}
+    code, pre {{ background: #161b22; padding: 0.2rem 0.5rem; border-radius: 6px; color: #79c0ff; }}
+    pre {{ padding: 1rem; overflow-x: auto; }}
+  </style>
+</head>
+<body>
+  <h1>⚠ Attacker Site — /oauth/callback</h1>
+  <p>This is not CyberCart. If a real user landed here, it's because the OAuth
+  server redirected them to whatever <code>redirect_uri</code> was supplied in
+  the <code>/authorize</code> request, without checking it against CyberCart's
+  registered redirect URIs.</p>
+  <p>Received query string:</p>
+  <pre>{query}</pre>
+  <p>This demo site does not do anything with the code above beyond displaying
+  it. Fix: the OAuth server should reject any <code>redirect_uri</code> that
+  isn't in the client's registered list (see <code>oauth-server</code>,
+  <code>PKCE_ENFORCED=true</code>).</p>
+</body>
+</html>"""
+
+
+@app.get("/oauth/callback", response_class=HTMLResponse)
+def oauth_callback_sink(request: Request):
+    """Dummy 'malicious' redirect target for the PKCE/open-redirect lab."""
+    return HTMLResponse(OAUTH_CALLBACK_HTML.format(query=str(request.query_params) or "(none)"))
