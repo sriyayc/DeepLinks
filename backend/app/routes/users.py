@@ -21,6 +21,7 @@ def login(token: str, response: Response, db: Session = Depends(get_db)):
     return {
         "participant_id": participant.id,
         "display_name": participant.display_name,
+        "role": participant.role,
         "message": "Login successful",
     }
 

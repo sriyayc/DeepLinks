@@ -20,8 +20,8 @@
       <a href="/products">Products</a>
       <a href="/search">Search</a>
       <a href="/orders">Orders</a>
-      <a href="/agent">AI Agent</a>
       <a href="/lab">Workshop</a>
+      {@html '<!-- TODO: Add /admin dashboard link here before launch -->'}
     </div>
 
     <AuthControls />

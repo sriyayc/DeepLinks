@@ -6,8 +6,9 @@
   <article class="card"><span class="badge">01</span><h2>Deep links</h2><p>Map URL schemes, paths, and parameters to application actions.</p></article>
   <article class="card"><span class="badge">02</span><h2>Reflected XSS</h2><p>Compare unsafe reflection with framework-safe rendering.</p></article>
   <article class="card"><span class="badge">03</span><h2>IDOR</h2><p>Explore object identifiers and authorization boundaries.</p></article>
-  <article class="card"><span class="badge" style="background:#f85149; color:#fff; border:none;">04</span><h2>CSRF</h2><p>Cookie-based session + SameSite=None + no CSRF token = attacker controls your account from a different site.</p><p class="muted small" style="margin-top:0.5rem;">→ Open lab</p></a>
-  <article class="card"><span class="badge">06</span><h2>Code exchange</h2><p>Trace an authorization code through the token exchange.</p></article>
+  <article class="card"><span class="badge">04</span><h2>CSRF</h2><p>Cookies + state-changing requests.</p></article>
+  <article class="card"><span class="badge">05</span><h2>Code exchange</h2><p>Trace an authorization code through the token exchange.</p></article>
+  <article class="card"><span class="badge">06</span><h2>PKCE</h2><p>Bind authorization codes to a client-generated verifier.</p></article>
   <article class="card"><span class="badge">07</span><h2>Agent navigation</h2><p>Build a policy layer between untrusted links and agent actions.</p></article>
 </section>
 
