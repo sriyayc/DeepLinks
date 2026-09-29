@@ -6,7 +6,7 @@ from .models import Participant, Product, Order, OrderItem
 from .product_seed import seed_products
 
 PARTICIPANT_START = 1001
-PARTICIPANT_END = 1120  # inclusive -> 120 participants
+PARTICIPANT_END = 1150  # inclusive -> 150 participants
 
 SAMPLE_ADDRESSES = [
     "10 Example Street",
@@ -26,23 +26,34 @@ def seed():
 
     products = db.query(Product).all()
 
-    if db.query(Participant).count() == 0:
-        participants = [
-            Participant(
-                id=pid,
-                display_name=f"participant{pid}",
-                access_token=secrets.token_hex(24),
-            )
-            for pid in range(PARTICIPANT_START, PARTICIPANT_END + 1)
-        ]
-        db.add_all(participants)
+    existing_pids = {p[0] for p in db.query(Participant.id).all()}
+    participants_to_add = [
+        Participant(
+            id=pid,
+            display_name=f"participant{pid}",
+            access_token=secrets.token_hex(24),
+        )
+        for pid in range(PARTICIPANT_START, PARTICIPANT_END + 1)
+        if pid not in existing_pids
+    ]
+    if participants_to_add:
+        db.add_all(participants_to_add)
         db.commit()
 
-    # Mark a few participants as admins for the privilege-escalation lab.
-    # IDs 1001, 1002, 1003 are the documented admin accounts.
-    ADMIN_IDS = [1001, 1002, 1003]
-    db.query(Participant).filter(Participant.id.in_(ADMIN_IDS)).update(
-        {Participant.role: "admin"}, synchronize_session="fetch"
+    # Ensure dedicated admin user with ID 1000 exists
+    if not db.query(Participant).filter_by(id=1000).first():
+        admin_user = Participant(
+            id=1000,
+            display_name="admin",
+            access_token=secrets.token_hex(24),
+            role="admin"
+        )
+        db.add(admin_user)
+        db.commit()
+
+    # Ensure only participant 1000 is admin
+    db.query(Participant).filter(Participant.id != 1000, Participant.role == "admin").update(
+        {Participant.role: "participant"}, synchronize_session="fetch"
     )
     db.commit()
 
