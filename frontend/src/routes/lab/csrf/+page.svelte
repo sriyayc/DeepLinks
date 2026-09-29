@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { publicApiBaseUrl } from "$lib/api";
+  import { publicApiBaseUrl, publicAttackerBaseUrl } from "$lib/api";
 
   let loggedIn = false;
   let shippingAddress = "";
@@ -75,8 +75,8 @@
     <span class="badge">STEP 2</span>
     <h2>Visit the attacker</h2>
     <p>The phishing page silently submits a cross-origin form with a replacement address.</p>
-    <a class="button" href="http://localhost:7001" target="_blank" rel="noreferrer">Open phishing page ↗</a>
-    <a class="button secondary" href="http://localhost:7001/demo" target="_blank" rel="noreferrer">Demo mode ↗</a>
+    <a class="button" href={publicAttackerBaseUrl} target="_blank" rel="noreferrer">Open phishing page ↗</a>
+    <a class="button secondary" href={`${publicAttackerBaseUrl}/demo`} target="_blank" rel="noreferrer">Demo mode ↗</a>
   </article>
 
   <article class="card">

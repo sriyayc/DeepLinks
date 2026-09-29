@@ -1,11 +1,12 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { publicApiBaseUrl } from "$lib/api";
 
   let orders: any[] = [];
   let error = "";
 
   onMount(async () => {
-    const res = await fetch("http://localhost:8000/api/orders", {
+    const res = await fetch(`${publicApiBaseUrl}/api/orders`, {
       credentials: "include",
     });
 

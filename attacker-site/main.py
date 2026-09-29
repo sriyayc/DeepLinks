@@ -12,12 +12,17 @@ Fix: require a per-session CSRF token. SameSite is an additional defence when
 the attacker and shop are on different sites.
 """
 
+import os
+
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 
 app = FastAPI(title="Attacker Site - CSRF Demo")
 
-BACKEND = "http://localhost:8000"
+# In hosted deployments (e.g. Railway) set BACKEND_URL to the shop API's public
+# origin and SHOP_URL to the shop frontend's public origin.
+BACKEND = os.getenv("BACKEND_URL", "http://localhost:8000").rstrip("/")
+SHOP = os.getenv("SHOP_URL", "http://localhost:5173").rstrip("/")
 CSRF_ENDPOINT = BACKEND + "/api/orders/shipping-address"
 ATTACKER_ADDRESS = "666 Attacker Avenue"
 
@@ -390,7 +395,7 @@ shipping_address=ATTACKER_ADDRESS_PLACEHOLDER</pre>
     </form>
     <iframe name="csrf_sink" style="display:none"></iframe>
     <div id="result">
-      ✅ Done! Go to <a href="http://localhost:5173/orders" target="_blank">CyberCart -&gt; Orders</a>
+      ✅ Done! Go to <a href="SHOP_PLACEHOLDER/orders" target="_blank">CyberCart -&gt; Orders</a>
       and reload - an order should show <strong>ATTACKER_ADDRESS_PLACEHOLDER</strong> as its shipping address.
     </div>
     <script>
@@ -416,6 +421,7 @@ shipping_address=ATTACKER_ADDRESS_PLACEHOLDER</pre>
 DEMO_HTML = DEMO_HTML.replace("CSRF_ENDPOINT_PLACEHOLDER", CSRF_ENDPOINT)
 DEMO_HTML = DEMO_HTML.replace("ATTACKER_ADDRESS_PLACEHOLDER", ATTACKER_ADDRESS)
 DEMO_HTML = DEMO_HTML.replace("BACKEND_PLACEHOLDER", BACKEND)
+DEMO_HTML = DEMO_HTML.replace("SHOP_PLACEHOLDER", SHOP)
 
 
 @app.get("/", response_class=HTMLResponse)

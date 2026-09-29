@@ -1,11 +1,13 @@
 <script lang="ts">
+  import { publicApiBaseUrl } from "$lib/api";
+
   let url = "https://localhost:5173/product/1";
   let result: any = null;
   let loading = false;
 
   async function inspect() {
     loading = true;
-    const res = await fetch("http://localhost:8000/api/agent/inspect", {
+    const res = await fetch(`${publicApiBaseUrl}/api/agent/inspect`, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ url })
