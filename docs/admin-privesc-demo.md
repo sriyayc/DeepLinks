@@ -16,17 +16,13 @@ CyberCart includes a hidden admin panel at `/admin` that lists every registered 
 
 ## Exploitation
 
-Any participant with a valid session cookie can call the API directly. Log in as any non-admin user (e.g. participant 1010) and then:
+Any participant with a valid session cookie can access the admin dashboard directly in their browser. 
 
-```bash
-# 1. Authenticate and capture the session cookie
-curl -c cookies.txt "http://localhost:8000/api/login?token=<participant-1010-token>"
+1. Log in to the application as any non-admin user (e.g., participant 1010).
+2. Based on the HTML comment you discovered in the previous step, manually type `http://localhost:5173/admin` into your browser's address bar.
+3. The page loads successfully and displays the hidden dashboard, proving you have bypassed the role restriction!
 
-# 2. Access the admin endpoint — succeeds despite not being an admin
-curl -b cookies.txt http://localhost:8000/api/admin/users
-```
-
-The response contains every user's ID, display name, generated email, and role — including which accounts are admins (IDs 1001, 1002, 1003).
+The response contains every user's ID, display name, generated email, and role — including which account is the admin (ID 1000).
 
 ## The vulnerability
 
@@ -46,30 +42,25 @@ This is a textbook **Broken Access Control** (OWASP A01:2021) / **privilege esca
 
 ## Fix toggle
 
-Append `?strict_authz=true` to enable the role check — the same query-parameter pattern used in the IDOR lab (`/api/orders/{id}?strict_authz=true`).
+To see the fix in action, the backend supports a `?strict_authz=true` parameter. You can test this via the raw API in your browser:
 
-```bash
-# Non-admin → 403
-curl -b cookies.txt "http://localhost:8000/api/admin/users?strict_authz=true"
-# {"detail":"Admin access required"}
-
-# Admin (e.g. participant 1001) → 200
-curl -b admin-cookies.txt "http://localhost:8000/api/admin/users?strict_authz=true"
-```
+1. While logged in as your non-admin user, navigate to `http://localhost:8000/api/admin/users?strict_authz=true`.
+   You will receive a **403 Forbidden** response (`{"detail":"Admin access required"}`).
+2. Now log in as the actual admin (user `1000`).
+3. Navigate to the same URL: `http://localhost:8000/api/admin/users?strict_authz=true`.
+   The request successfully returns the data.
 
 When `strict_authz=true`, the endpoint returns **403 Admin access required** for any user whose `role` is not `"admin"`.
 
 ## Admin accounts
 
-The following seeded participants have `role = "admin"`:
+The following seeded participant has `role = "admin"`:
 
-| ID   | Display name    |
-|------|-----------------|
-| 1001 | participant1001 |
-| 1002 | participant1002 |
-| 1003 | participant1003 |
+| ID   | Display name |
+|------|--------------|
+| 1000 | admin        |
 
-All other participants (1004–1120) remain `role = "participant"`.
+All other participants (1001–1150) remain `role = "participant"`.
 
 ## Validation
 

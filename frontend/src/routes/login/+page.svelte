@@ -21,7 +21,12 @@
       const data = await res.json();
       message = `Logged in as ${data.display_name}`;
       window.dispatchEvent(new CustomEvent("auth-changed"));
-      goto("/orders");
+      
+      if (data.role === "admin") {
+        goto("/admin");
+      } else {
+        goto("/orders");
+      }
     } else {
       const data = await res.json();
       message = data.detail ?? "Login failed";
