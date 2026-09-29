@@ -224,12 +224,25 @@ dd {
   .grid, .grid.three, .detail {
     grid-template-columns: 1fr;
   }
+}
+
+  @media (max-width: 1000px) {
+  .nav {
+    height: auto;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 5vw;
+  }
 
   .primary-links {
-    display: none;
+    display: flex;
+    flex-wrap: wrap;
+    order: 3;
+    width: 100%;
+    gap: 0.75rem 1rem;
   }
 
   .navlinks {
-    display: flex;
+    display: contents;
   }
 }

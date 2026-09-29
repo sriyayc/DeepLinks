@@ -21,6 +21,7 @@
       <a href="/search">Search</a>
       <a href="/orders">Orders</a>
       <a href="/lab">Workshop</a>
+      <a href="/challenges">Challenges</a>
       {@html '<!-- TODO: Add /admin dashboard link here before launch -->'}
     </div>
 
