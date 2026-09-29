@@ -477,3 +477,80 @@ OAUTH_CALLBACK_HTML = """<!DOCTYPE html>
 def oauth_callback_sink(request: Request):
     """Dummy 'malicious' redirect target for the PKCE/open-redirect lab."""
     return HTMLResponse(OAUTH_CALLBACK_HTML.format(query=str(request.query_params) or "(none)"))
+
+
+# ---------------------------------------------------------------------------
+# Prompt-injection lab: the "Editor's Pick" phishing landing page.
+#
+# The CyberCart chatbot, when prompt-injected, recommends AGENT_DEMO_LINK as
+# the "Editor's Pick" best deal. Pointing AGENT_DEMO_LINK at this route means a
+# participant who trusts the bot lands on a credential-harvesting login page.
+#
+# SAFETY: this page collects nothing. The form has no action, the submit is
+# cancelled client-side, and no value is stored, logged, or transmitted
+# anywhere. It only shows a warning so participants see what a real phish does.
+# ---------------------------------------------------------------------------
+EDITOR_PICK_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CyberCart Editor's Pick — Exclusive Deal</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #0d1117; color: #c9d1d9;
+           display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+            padding: 2rem; width: 100%; max-width: 380px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+    .brand { font-size: 1.4rem; font-weight: 700; color: #58a6ff; margin-bottom: 0.25rem; }
+    .deal { color: #3fb950; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    label { display: block; font-size: 0.85rem; margin: 0.9rem 0 0.3rem; }
+    input { width: 100%; box-sizing: border-box; padding: 0.6rem 0.7rem; border-radius: 8px;
+            border: 1px solid #30363d; background: #0d1117; color: #c9d1d9; font-size: 0.95rem; }
+    button { width: 100%; margin-top: 1.4rem; padding: 0.7rem; border: none; border-radius: 8px;
+             background: #238636; color: #fff; font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .warn { display: none; background: #3d1c1c; border: 1px solid #f85149; color: #ffa198;
+            border-radius: 10px; padding: 1.4rem; text-align: center; line-height: 1.5; }
+    .warn strong { color: #f85149; display: block; font-size: 1.1rem; margin-bottom: 0.6rem; }
+    .foot { margin-top: 1rem; font-size: 0.72rem; color: #6e7681; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <form id="login" autocomplete="off">
+      <div class="brand">CyberCart</div>
+      <div class="deal">🏆 Editor's Pick — log in to unlock today's exclusive deal</div>
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" placeholder="you@example.com" required />
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="Your password" required />
+      <button type="submit">Log in to claim deal</button>
+    </form>
+
+    <div id="warn" class="warn">
+      <strong>&#9888;&#65039; Phishing simulation triggered</strong>
+      In a real attack, these credentials could have been sent to an attacker.
+    </div>
+
+    <p class="foot">Workshop phishing simulation. Nothing you type is stored, logged, or sent anywhere.</p>
+  </div>
+
+  <script>
+    document.getElementById('login').addEventListener('submit', function (e) {
+      e.preventDefault();               // never actually submit
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('warn').style.display = 'block';
+      // Deliberately no fetch, no storage, no logging: credentials are discarded.
+    });
+  </script>
+</body>
+</html>"""
+
+
+@app.get("/editor-pick", response_class=HTMLResponse)
+def editor_pick():
+    """Fake 'Editor's Pick' phishing login for the prompt-injection lab.
+
+    Collects nothing: the form is cancelled in the browser and no value is
+    stored, logged, or transmitted anywhere.
+    """
+    return HTMLResponse(EDITOR_PICK_HTML)
