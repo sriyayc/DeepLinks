@@ -8,6 +8,34 @@
     flagged?: boolean;
   };
 
+  type Segment = { link: boolean; value: string };
+
+  // Split a reply into plain-text and URL segments so URLs render as real
+  // links. Only http(s):// URLs are linkified, and every segment is bound via
+  // Svelte's escaped text/href interpolation (no raw-HTML rendering), so a
+  // prompt-injected reply cannot inject markup or a javascript: URL.
+  function linkify(text: string): Segment[] {
+    const parts: Segment[] = [];
+    const re = /(https?:\/\/[^\s]+)/g;
+    let last = 0;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) parts.push({ link: false, value: text.slice(last, m.index) });
+      let url = m[0];
+      let trail = '';
+      const tm = url.match(/[.,!?;:)\]]+$/); // don't swallow trailing punctuation
+      if (tm) {
+        trail = tm[0];
+        url = url.slice(0, url.length - trail.length);
+      }
+      parts.push({ link: true, value: url });
+      if (trail) parts.push({ link: false, value: trail });
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) parts.push({ link: false, value: text.slice(last) });
+    return parts;
+  }
+
   type Lesson = {
     questions: string[];
     poisoned_note: string;
@@ -386,9 +414,7 @@
             </small>
 
 
-            <p>
-              {line.text}
-            </p>
+            <p>{#each linkify(line.text) as seg}{#if seg.link}<a href={seg.value} target="_blank" rel="noreferrer noopener" style="color:#58a6ff; text-decoration:underline;">{seg.value}</a>{:else}{seg.value}{/if}{/each}</p>
 
 
             <!--
