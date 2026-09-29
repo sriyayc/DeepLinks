@@ -22,7 +22,25 @@
    still be exchanged for a token without knowing the original verifier.
 
 Check current mode: `GET localhost:9000/lab/pkce-status`
+## UI walkthrough (recommended for the workshop)
 
+1. Start all four services.
+2. Open `localhost:5173` and click **Login** in the nav — this goes to `/login`,
+   which shows CyberID's current mode and a demo credentials form (any
+   username/password is accepted; it isn't checked against anything).
+3. Click **Sign in with CyberID**. The page builds an `/authorize` request the
+   way a spoofed login link would: `redirect_uri` points at the attacker site
+   (`PUBLIC_OAUTH_ATTACKER_REDIRECT_URI`, e.g. the deployed `attacker-site`).
+   - **Vulnerable mode:** the OAuth server doesn't check `redirect_uri`, so
+     the browser is redirected to the attacker's `/oauth/callback` with a real
+     authorization code — the dummy sink displays it.
+   - **Fixed mode:** the OAuth server rejects the mismatched `redirect_uri`
+     (`invalid_redirect_uri`). The login page detects this and automatically
+     retries with CyberCart's real, registered callback, completes the PKCE
+     token exchange, and redirects to the homepage.
+4. Flip `PKCE_ENFORCED` on the `oauth-server` service and repeat to see the
+   other mode.
+   
 ## Attack walkthrough (local only)
 
 1. Start all four services (`docker compose up` or run each with `uvicorn`).

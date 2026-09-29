@@ -6,20 +6,23 @@ services:
     env_file:
       - ./backend/.env
 
-  oauth:
+    oauth:
     build: ./oauth-server
     ports:
       - "9000:9000"
+    env_file:
+      - ./oauth-server/.env
 
   frontend:
     build: ./frontend
     ports:
       - "5173:5173"
     environment:
-      # Server-side Svelte loads use the Docker service name; browser requests
-      # continue through the backend port published on the workshop machine.
       API_BASE_URL: http://backend:8000
       PUBLIC_API_BASE_URL: http://localhost:8000
+      PUBLIC_OAUTH_BASE_URL: http://localhost:9000
+      PUBLIC_OAUTH_CLIENT_ID: cybercart
+      PUBLIC_OAUTH_ATTACKER_REDIRECT_URI: https://layer8-attacker.up.railway.app/oauth/callback
     depends_on:
       - backend
       - oauth

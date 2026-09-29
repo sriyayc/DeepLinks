@@ -5,7 +5,7 @@ A deliberately simple fake e-commerce application intended as a local cybersecur
 ## Stack
 
 - Frontend: SvelteKit + TypeScript
-- Backend: FastAPI + SQLite
+- Backend: FastAPI + SQLite + Supabase
 - Fake OAuth provider: FastAPI
 - Attacker/demo site: FastAPI
 - Containerization: Docker Compose

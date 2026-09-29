@@ -5,9 +5,31 @@ import secrets
 from urllib.parse import urlencode
 
 from fastapi import FastAPI, Form
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 
 app = FastAPI(title="CyberID — Fake OAuth Provider")
+
+# ---------------------------------------------------------------------------
+# CORS: the frontend calls /authorize and /token directly via fetch() so it
+# can inspect the result (redirect vs. invalid_redirect_uri error) before
+# deciding where to send the browser next. Keep this scoped to the shop
+# frontend's origins — never add the attacker origin here.
+# ---------------------------------------------------------------------------
+_default_origins = "http://localhost:5173,http://127.0.0.1:5173"
+_allowed_origins = [
+    o.strip()
+    for o in os.environ.get("ALLOWED_ORIGINS", _default_origins).split(",")
+    if o.strip()
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_allowed_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
 
 # ---------------------------------------------------------------------------
 # Task 5 — PKCE / open-redirect lab toggle
@@ -36,7 +58,8 @@ clients = {
         "client_id": "cybercart",
         "name": "CyberCart",
         "redirect_uris": [
-            "http://localhost:5173/oauth/callback"
+            "http://localhost:5173/oauth/callback",
+            "https://layer8-frontend.up.railway.app/oauth/callback",
         ],
     }
 }
