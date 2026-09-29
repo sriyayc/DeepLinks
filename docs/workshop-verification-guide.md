@@ -151,7 +151,7 @@ Navigate to:
 http://localhost:5173/admin
 ```
 
-✅ You can see the **full list of all 120 participants** — their IDs, names, emails, and roles — **even though you're a regular participant, not an admin!**
+✅ You can see the **full list of all 150 participants** — their IDs, names, emails, and roles — **even though you're a regular participant, not an admin!**
 
 This is broken access control. The server only checks that you're logged in, not that you have admin privileges.
 
@@ -169,13 +169,11 @@ http://localhost:8000/api/admin/users
 
 Look through the results for entries where `"role": "admin"`. You should find:
 
-| ID   | Name            | Role  |
-|------|-----------------|-------|
-| 1001 | participant1001 | admin |
-| 1002 | participant1002 | admin |
-| 1003 | participant1003 | admin |
+| ID   | Name  | Role  |
+|------|-------|-------|
+| 1000 | admin | admin |
 
-Everyone else (IDs 1004–1120) has `"role": "participant"`.
+Everyone else (IDs 1001–1150) has `"role": "participant"`.
 
 ### Step 5 — See the fix
 
@@ -187,7 +185,7 @@ http://localhost:8000/api/admin/users?strict_authz=true
 
 ✅ You get `{"detail": "Admin access required"}` — a **403 Forbidden** response.
 
-Now log in as an admin account (ID 1001, 1002, or 1003 — your instructor will share the token) and try the same URL with `?strict_authz=true`:
+Now log in as the admin account (ID 1000 — your instructor will share the token) and try the same URL with `?strict_authz=true`:
 
 ```
 http://localhost:8000/api/admin/users?strict_authz=true
