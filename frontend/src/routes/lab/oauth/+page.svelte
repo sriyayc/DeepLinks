@@ -1,92 +1,167 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { publicOauthBaseUrl } from "$lib/api";
+  import {
+    publicOauthBaseUrl,
+    publicOauthClientId,
+    publicOauthRedirectUri,
+    publicOauthAttackerRedirectUri,
+  } from "$lib/api";
+  import {
+    generateState,
+    generateCodeVerifier,
+    generateCodeChallenge,
+    buildAuthorizeUrl,
+    probeAuthorize,
+    storePkceState,
+  } from "$lib/oauth";
 
-  let pkce: { pkce_enforced: boolean; mode: string; note: string } | null = null;
-  let loading = true;
+  let username = "";
+  let password = "";
+  let status: "idle" | "checking" | "blocked" | "error" = "idle";
+  let statusDetail = "";
+  let pkceMode: { pkce_enforced: boolean; mode: string; note: string } | null = null;
 
   onMount(async () => {
     try {
       const res = await fetch(`${publicOauthBaseUrl}/lab/pkce-status`);
-      if (res.ok) pkce = await res.json();
+      if (res.ok) pkceMode = await res.json();
     } catch {
-      pkce = null;
-    } finally {
-      loading = false;
+      pkceMode = null;
     }
   });
+
+  async function signInWithCyberId() {
+    status = "checking";
+    statusDetail = "";
+
+    const state = generateState();
+    const verifier = generateCodeVerifier();
+    const challenge = await generateCodeChallenge(verifier);
+    storePkceState(state, verifier);
+
+    const attackerAuthorizeUrl = buildAuthorizeUrl(publicOauthBaseUrl, {
+      clientId: publicOauthClientId,
+      redirectUri: publicOauthAttackerRedirectUri,
+      state,
+      codeChallenge: challenge,
+    });
+
+    let probe: Awaited<ReturnType<typeof probeAuthorize>>;
+    try {
+      probe = await probeAuthorize(attackerAuthorizeUrl);
+    } catch (err) {
+      status = "error";
+      statusDetail = "Could not reach the OAuth server. Is oauth-server running?";
+      return;
+    }
+
+    if (probe.willRedirect) {
+      window.location.href = attackerAuthorizeUrl;
+      return;
+    }
+
+    status = "blocked";
+    statusDetail =
+      typeof probe.body === "object" && probe.body && "error" in (probe.body as Record<string, unknown>)
+        ? String((probe.body as Record<string, unknown>).error)
+        : "invalid_redirect_uri";
+
+    const realState = generateState();
+    const realVerifier = generateCodeVerifier();
+    const realChallenge = await generateCodeChallenge(realVerifier);
+    storePkceState(realState, realVerifier);
+
+    const realAuthorizeUrl = buildAuthorizeUrl(publicOauthBaseUrl, {
+      clientId: publicOauthClientId,
+      redirectUri: publicOauthRedirectUri,
+      state: realState,
+      codeChallenge: realChallenge,
+    });
+
+    window.location.href = realAuthorizeUrl;
+  }
+
+  function handleSubmit(event: SubmitEvent) {
+    event.preventDefault();
+    signInWithCyberId();
+  }
 </script>
 
-<p class="eyebrow">WORKSHOP · LAB 1</p>
-<h1>OAuth — Open Redirect + PKCE</h1>
+<p class="eyebrow">WORKSHOP · LAB 1 · TASK 5</p>
+<h1>Sign in with CyberID</h1>
+<p class="lead">Single sign-on demo — OAuth open redirect + PKCE.</p>
 
-<p class="lead">
-  The CyberID provider issues an authorization code to whatever <code>redirect_uri</code>
-  the caller supplies. In vulnerable mode it never checks that address against the app's
-  registered callback, so an attacker-controlled site receives the code.
-</p>
-
-{#if loading}
-  <p class="muted">Loading status…</p>
-{:else if pkce}
-  <div class="notice" class:vulnerable={!pkce.pkce_enforced}>
-    {#if pkce.pkce_enforced}
-      <strong>🛡 FIXED MODE</strong> — <code>PKCE_ENFORCED=true</code>. {pkce.note}
-    {:else}
-      <strong>⚠ VULNERABLE MODE</strong> — <code>PKCE_ENFORCED=false</code>. {pkce.note}
-    {/if}
+{#if pkceMode}
+  <div class="notice" class:vulnerable={!pkceMode.pkce_enforced}>
+    <strong>{pkceMode.pkce_enforced ? "🛡 FIXED" : "⚠ VULNERABLE"} MODE</strong>
+    — <code>PKCE_ENFORCED={String(pkceMode.pkce_enforced)}</code>
+    <p class="muted small" style="margin-top:0.4rem;">{pkceMode.note}</p>
   </div>
 {/if}
 
-<section class="grid lab-steps">
-  <article class="card">
-    <span class="badge">STEP 1</span>
-    <h2>Open the login page</h2>
-    <p>The login page shows the current mode and the "Sign in with CyberID" button.</p>
-    <a class="button" href="/login">Go to login ↗</a>
-  </article>
+<form class="form" on:submit={handleSubmit}>
+  <label>
+    Username
+    <input type="text" bind:value={username} placeholder="alice" autocomplete="username" />
+  </label>
+  <label>
+    Password
+    <input
+      type="password"
+      bind:value={password}
+      placeholder="••••••••"
+      autocomplete="current-password"
+    />
+  </label>
+  <div class="actions">
+    <button class="button" type="submit" disabled={status === "checking"}>
+      {status === "checking" ? "Signing in…" : "Sign in with CyberID"}
+    </button>
+  </div>
+</form>
 
-  <article class="card">
-    <span class="badge">STEP 2</span>
-    <h2>Sign in with CyberID</h2>
-    <p>The app builds an <code>/authorize</code> request with <code>redirect_uri</code> pointed at the attacker — exactly like a phishing link.</p>
-  </article>
+<p class="muted small" style="margin-top:0.75rem;">
+  Demo login — any username/password is accepted. This form exists to demonstrate the
+  OAuth open-redirect + PKCE lab; it does not check your password against anything.
+</p>
 
-  <article class="card">
-    <span class="badge">STEP 3</span>
-    <h2>Observe the result</h2>
-    <p>Vulnerable → you land on the attacker's callback (the code leaked). Fixed → the spoofed <code>redirect_uri</code> is rejected and login continues safely.</p>
-  </article>
-</section>
+{#if status === "blocked"}
+  <div class="notice">
+    <strong>Spoofed redirect_uri rejected</strong> (<code>{statusDetail}</code>) — continuing with the
+    real, registered callback instead…
+  </div>
+{/if}
+
+{#if status === "error"}
+  <div class="notice vulnerable">
+    <strong>Error:</strong> {statusDetail}
+  </div>
+{/if}
 
 <section class="card lab-section">
-  <h2>The vulnerable endpoint</h2>
-  <dl>
-    <dt>Request</dt>
-    <dd><code>GET /authorize?redirect_uri=…&amp;code_challenge=…</code></dd>
-    <dt>Flaw</dt>
-    <dd><code>redirect_uri</code> is not checked against the client's registered list, and <code>code_verifier</code> is never verified.</dd>
-    <dt>Effect</dt>
-    <dd>An attacker-supplied redirect receives a valid authorization code.</dd>
-  </dl>
+  <h2>What just happened?</h2>
+  <p class="small">
+    Clicking "Sign in with CyberID" builds an <code>/authorize</code> request the way a phishing
+    link would — with <code>redirect_uri</code> pointed at an attacker-controlled site. In
+    vulnerable mode, CyberID doesn't check <code>redirect_uri</code> against the app's registered
+    callback, so it issues a real authorization code to that attacker site. In fixed mode, CyberID
+    rejects the mismatched <code>redirect_uri</code>, so this page falls back to the real callback
+    and logs you in normally.
+  </p>
 </section>
 
 <section class="card lab-section">
   <h2>The fix</h2>
-  <p>
-    Set <code>PKCE_ENFORCED=true</code> on the oauth-server: <code>redirect_uri</code> must
-    exactly match a registered URI, and the server recomputes <code>S256(code_verifier)</code>
-    and rejects any mismatch.
+  <p class="small">
+    Set <code>PKCE_ENFORCED=true</code> on the oauth-server: <code>redirect_uri</code> must exactly
+    match a registered URI, and the server recomputes <code>S256(code_verifier)</code> and rejects
+    any mismatch.
   </p>
 </section>
 
 <style>
-  .lab-steps,
   .lab-section {
     margin-top: 2rem;
-  }
-  .lab-steps .button {
-    margin-top: 0.75rem;
   }
   .vulnerable {
     border-color: #f85149;
