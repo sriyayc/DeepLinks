@@ -102,15 +102,16 @@
 <form class="form" on:submit={handleSubmit}>
   <label>
     Username
-    <input type="text" bind:value={username} placeholder="alice" autocomplete="username" />
+    <input type="text" bind:value={username} placeholder="Username" autocomplete="username" required />
   </label>
   <label>
     Password
     <input
       type="password"
       bind:value={password}
-      placeholder="••••••••"
+      placeholder="Password"
       autocomplete="current-password"
+      required
     />
   </label>
   <div class="actions">
