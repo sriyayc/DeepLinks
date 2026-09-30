@@ -11,11 +11,6 @@
   <a class="card link-card" href="/lab/admin"><span class="badge">06</span><h2>Admin escalation</h2><p>An admin-only endpoint that never checks your role.</p><p class="muted small">→ Open lab</p></a>
 </section>
 
-<div class="notice">
-  <strong>Organizer note:</strong> Keep the vulnerable implementations local,
-  fake, and clearly separated from the secure implementations.
-</div>
-
 <style>
   .link-card { display: block; text-decoration: none; color: inherit; }
   .link-card:hover { border-color: #58a6ff; }
