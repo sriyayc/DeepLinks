@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import { challenges, checkChallengeAnswer, challengeTier } from "$lib/challenges";
   import type { Challenge } from "$lib/challenges";
   import { publicApiBaseUrl, publicChallengesEnabled } from "$lib/api";
@@ -16,6 +16,8 @@
 
   let score = 0;
   let loggedIn = true;
+  let leaderboard: { participant_id: number; display_name: string; score: number }[] = [];
+  let timer: ReturnType<typeof setInterval> | undefined;
 
   async function loadMe() {
     try {
@@ -33,6 +35,15 @@
       revealedHints = { ...hinted };
     } catch {
       // leave defaults; scoring simply won't record
+    }
+  }
+
+  async function loadLeaderboard() {
+    try {
+      const res = await fetch(`${publicApiBaseUrl}/api/challenges/leaderboard`, { credentials: "include" });
+      if (res.ok) leaderboard = await res.json();
+    } catch {
+      // ignore
     }
   }
 
@@ -59,6 +70,7 @@
           if (res.ok) {
             const data = await res.json();
             score = data.score ?? score;
+            await loadLeaderboard();
           } else if (res.status === 401) {
             loggedIn = false;
           }
@@ -95,6 +107,7 @@
         hinted = { ...hinted, [challenge.id]: true };
         // Only reveal once the points have actually been deducted.
         revealedHints = { ...revealedHints, [challenge.id]: true };
+        await loadLeaderboard();
       } else if (res.status === 401) {
         loggedIn = false;
         hintErrors = { ...hintErrors, [challenge.id]: "Log in to use hints." };
@@ -111,6 +124,12 @@
   onMount(() => {
     if (!publicChallengesEnabled) return;
     loadMe();
+    loadLeaderboard();
+    timer = setInterval(loadLeaderboard, 20000);
+  });
+
+  onDestroy(() => {
+    if (timer) clearInterval(timer);
   });
 </script>
 
@@ -132,9 +151,19 @@
 
   <div class="score-row">
     <div class="score-chip">Your score: <strong>{score}</strong></div>
-    <a class="button secondary small-btn" href="/leaderboard">🏆 Leaderboard →</a>
-    {#if !loggedIn}<span class="muted small">Log in to record your score.</span>{/if}
+    {#if !loggedIn}<span class="muted small">Log in to record your score on the leaderboard.</span>{/if}
   </div>
+
+  {#if leaderboard.length}
+    <section class="card leaderboard">
+      <div class="card-heading"><h2>🏆 Leaderboard</h2><button class="button secondary small-btn" on:click={loadLeaderboard}>Refresh</button></div>
+      <ol class="lb-list">
+        {#each leaderboard as row, i (row.participant_id)}
+          <li><span class="lb-rank">{i + 1}</span><span class="lb-name">{row.display_name}</span><span class="lb-score">{row.score}</span></li>
+        {/each}
+      </ol>
+    </section>
+  {/if}
 
   <ol class="question-list">
     {#each challenges as question, index (question.id)}
@@ -235,6 +264,7 @@
 
   .card-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
   .solved, .correct { color: #8fdbab; }
+  .hint-cost { color: #e0a35a; font-size: 0.85em; }
   .ciphertext { display: grid; gap: 0.6rem; padding: 1.2rem; border: 1px solid #30394a; border-radius: 10px; background: #090c12; }
   .ciphertext code { font-size: clamp(1rem, 3vw, 1.3rem); overflow-wrap: anywhere; user-select: all; }
   details { margin-top: 1.5rem; }
@@ -250,5 +280,10 @@
   .score-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
   .score-chip { background: #10151e; border: 1px solid #30394a; border-radius: 999px; padding: 0.4rem 1rem; }
   .score-chip strong { color: #8fdbab; }
+  .leaderboard { margin-top: 1.5rem; }
   .small-btn { margin: 0; padding: 0.3rem 0.8rem; font-size: 0.85rem; }
+  .lb-list { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: 0.4rem; }
+  .lb-list li { display: grid; grid-template-columns: 2rem 1fr auto; align-items: center; gap: 0.75rem; padding: 0.4rem 0.6rem; border-radius: 8px; background: #10151e; }
+  .lb-rank { color: #aab4c6; text-align: center; }
+  .lb-score { color: #8fdbab; font-variant-numeric: tabular-nums; }
 </style>

@@ -22,7 +22,6 @@
       <a href="/orders">Orders</a>
       <a href="/lab">Workshop</a>
       <a href="/challenges">Challenges</a>
-      <a href="/leaderboard">Leaderboard</a>
       {@html '<!-- TODO: Add /admin dashboard link here before launch -->'}
     </div>
 
