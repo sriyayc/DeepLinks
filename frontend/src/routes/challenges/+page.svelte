@@ -8,6 +8,9 @@
   let results: Record<string, boolean> = {};
   let solved: Record<string, boolean> = {};
   let hinted: Record<string, boolean> = {};
+  let revealedHints: Record<string, boolean> = {};
+  let hintPending: Record<string, boolean> = {};
+  let hintErrors: Record<string, string> = {};
   let pending: Record<string, boolean> = {};
   let errors: Record<string, string> = {};
 
@@ -29,6 +32,7 @@
       score = data.score ?? 0;
       solved = Object.fromEntries((data.solved ?? []).map((id: string) => [id, true]));
       hinted = Object.fromEntries((data.hinted ?? []).map((id: string) => [id, true]));
+      revealedHints = { ...hinted };
     } catch {
       // leave defaults; scoring simply won't record
     }
@@ -81,10 +85,15 @@
     }
   }
 
-  async function revealHint(challenge: Challenge, event: Event) {
-    const open = (event.target as HTMLDetailsElement).open;
-    if (!open || hinted[challenge.id]) return;
-    hinted = { ...hinted, [challenge.id]: true };
+  async function revealHint(challenge: Challenge) {
+    if (revealedHints[challenge.id] || hintPending[challenge.id]) return;
+    // Already paid for this hint earlier — show it without charging again.
+    if (hinted[challenge.id]) {
+      revealedHints = { ...revealedHints, [challenge.id]: true };
+      return;
+    }
+    hintPending = { ...hintPending, [challenge.id]: true };
+    hintErrors = { ...hintErrors, [challenge.id]: "" };
     try {
       const res = await fetch(`${publicApiBaseUrl}/api/challenges/hint`, {
         method: "POST",
@@ -95,12 +104,20 @@
       if (res.ok) {
         const data = await res.json();
         score = data.score ?? score;
+        hinted = { ...hinted, [challenge.id]: true };
+        // Only reveal once the points have actually been deducted.
+        revealedHints = { ...revealedHints, [challenge.id]: true };
         await loadLeaderboard();
       } else if (res.status === 401) {
         loggedIn = false;
+        hintErrors = { ...hintErrors, [challenge.id]: "Log in to use hints." };
+      } else {
+        hintErrors = { ...hintErrors, [challenge.id]: "Could not deduct points. Try again." };
       }
     } catch {
-      // hint still shows; cost simply not recorded
+      hintErrors = { ...hintErrors, [challenge.id]: "Could not reach the server." };
+    } finally {
+      hintPending = { ...hintPending, [challenge.id]: false };
     }
   }
 
@@ -179,13 +196,19 @@
           </details>
         {/if}
         {#if question.hint}
-          <details on:toggle={(e) => revealHint(question, e)}>
-            <summary>Need a hint? <span class="hint-cost">(−{tier.hintCost} pts{hinted[question.id] ? ", already used" : ""})</span></summary>
-            <p class="hint">{question.hint}</p>
-            {#if question.toolUrl}
-              <a class="button secondary tool-link" href={question.toolUrl} target="_blank" rel="noopener noreferrer">{question.toolLabel ?? "Open CyberChef ROT13 ↗"}</a>
+          <div class="hint-block">
+            {#if revealedHints[question.id]}
+              <p class="hint">{question.hint}</p>
+              {#if question.toolUrl}
+                <a class="button secondary tool-link" href={question.toolUrl} target="_blank" rel="noopener noreferrer">{question.toolLabel ?? "Open CyberChef ROT13 ↗"}</a>
+              {/if}
+            {:else}
+              <button class="button secondary" on:click={() => revealHint(question)} disabled={hintPending[question.id]}>
+                {hintPending[question.id] ? "Deducting…" : `Reveal hint (−${tier.hintCost} pts)`}
+              </button>
+              {#if hintErrors[question.id]}<p class="feedback">{hintErrors[question.id]}</p>{/if}
             {/if}
-          </details>
+          </div>
         {/if}
         {#if question.answerHash}
           <form class="flag-form" on:submit|preventDefault={() => submitAnswer(question)}>
@@ -245,6 +268,7 @@
   .ciphertext { display: grid; gap: 0.6rem; padding: 1.2rem; border: 1px solid #30394a; border-radius: 10px; background: #090c12; }
   .ciphertext code { font-size: clamp(1rem, 3vw, 1.3rem); overflow-wrap: anywhere; user-select: all; }
   details { margin-top: 1.5rem; }
+  .hint-block { margin-top: 1.5rem; }
   .tool-link { margin-left: 0; margin-top: 1rem; }
   .flag-form { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #222a38; }
   .flag-controls { display: flex; gap: 0.75rem; margin-top: 0.6rem; }
