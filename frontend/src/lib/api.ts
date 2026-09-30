@@ -11,6 +11,10 @@ export const publicApiBaseUrl = "";
 export const publicAttackerBaseUrl =
   env.PUBLIC_ATTACKER_BASE_URL || "http://localhost:7001";
 
+// CTF challenges are locked until an instructor sets PUBLIC_CHALLENGES_ENABLED
+// to "true" on the frontend service (default locked).
+export const publicChallengesEnabled = env.PUBLIC_CHALLENGES_ENABLED === "true";
+
 // Task 5 — OAuth / PKCE lab config.
 export const publicOauthBaseUrl = env.PUBLIC_OAUTH_BASE_URL || "http://localhost:9000";
 export const publicOauthClientId = env.PUBLIC_OAUTH_CLIENT_ID || "cybercart";

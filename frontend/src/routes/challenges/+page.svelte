@@ -1,12 +1,47 @@
 <script lang="ts">
-  import { challenges, checkChallengeAnswer } from "$lib/challenges";
+  import { onMount, onDestroy } from "svelte";
+  import { challenges, checkChallengeAnswer, challengeTier } from "$lib/challenges";
   import type { Challenge } from "$lib/challenges";
+  import { publicApiBaseUrl, publicChallengesEnabled } from "$lib/api";
 
   let submissions: Record<string, string> = {};
   let results: Record<string, boolean> = {};
   let solved: Record<string, boolean> = {};
+  let hinted: Record<string, boolean> = {};
   let pending: Record<string, boolean> = {};
   let errors: Record<string, string> = {};
+
+  let score = 0;
+  let loggedIn = true;
+  let leaderboard: { participant_id: number; display_name: string; score: number }[] = [];
+  let timer: ReturnType<typeof setInterval> | undefined;
+
+  async function loadMe() {
+    try {
+      const res = await fetch(`${publicApiBaseUrl}/api/challenges/me`, { credentials: "include" });
+      if (res.status === 401) {
+        loggedIn = false;
+        return;
+      }
+      if (!res.ok) return;
+      const data = await res.json();
+      loggedIn = true;
+      score = data.score ?? 0;
+      solved = Object.fromEntries((data.solved ?? []).map((id: string) => [id, true]));
+      hinted = Object.fromEntries((data.hinted ?? []).map((id: string) => [id, true]));
+    } catch {
+      // leave defaults; scoring simply won't record
+    }
+  }
+
+  async function loadLeaderboard() {
+    try {
+      const res = await fetch(`${publicApiBaseUrl}/api/challenges/leaderboard`, { credentials: "include" });
+      if (res.ok) leaderboard = await res.json();
+    } catch {
+      // ignore
+    }
+  }
 
   async function submitAnswer(challenge: Challenge) {
     if (pending[challenge.id]) return;
@@ -18,13 +53,67 @@
     try {
       const correct = await checkChallengeAnswer(challenge, submissions[challenge.id] ?? "");
       results = { ...results, [challenge.id]: correct };
-      if (correct) solved = { ...solved, [challenge.id]: true };
+      if (correct && !solved[challenge.id]) {
+        solved = { ...solved, [challenge.id]: true };
+        // Record the solve for the leaderboard (server dedupes; ignore if not logged in).
+        try {
+          const res = await fetch(`${publicApiBaseUrl}/api/challenges/solve`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ challenge_id: challenge.id }),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            score = data.score ?? score;
+            await loadLeaderboard();
+          } else if (res.status === 401) {
+            loggedIn = false;
+          }
+        } catch {
+          // scoring unavailable; the solve still shows locally
+        }
+      }
     } catch {
       errors = { ...errors, [challenge.id]: "Could not check your flag. Please try again." };
     } finally {
       pending = { ...pending, [challenge.id]: false };
     }
   }
+
+  async function revealHint(challenge: Challenge, event: Event) {
+    const open = (event.target as HTMLDetailsElement).open;
+    if (!open || hinted[challenge.id]) return;
+    hinted = { ...hinted, [challenge.id]: true };
+    try {
+      const res = await fetch(`${publicApiBaseUrl}/api/challenges/hint`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challenge_id: challenge.id }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        score = data.score ?? score;
+        await loadLeaderboard();
+      } else if (res.status === 401) {
+        loggedIn = false;
+      }
+    } catch {
+      // hint still shows; cost simply not recorded
+    }
+  }
+
+  onMount(() => {
+    if (!publicChallengesEnabled) return;
+    loadMe();
+    loadLeaderboard();
+    timer = setInterval(loadLeaderboard, 20000);
+  });
+
+  onDestroy(() => {
+    if (timer) clearInterval(timer);
+  });
 </script>
 
 <svelte:head>
@@ -33,14 +122,38 @@
 
 <p class="eyebrow">WORKSHOP CHALLENGES</p>
 <h1>Challenges</h1>
-<p class="lead">A few simple questions to check what you've learned.</p>
 
-{#if challenges.length}
+{#if !publicChallengesEnabled}
+  <section class="card empty-state">
+    <h2>🔒 Challenges are locked</h2>
+    <p class="muted">The CTF challenges open later in the session. Check back then!</p>
+    <a class="button secondary" href="/products">Back to the shop</a>
+  </section>
+{:else}
+  <p class="lead">Solve challenges to score points. Hints cost points, so use them wisely.</p>
+
+  <div class="score-row">
+    <div class="score-chip">Your score: <strong>{score}</strong></div>
+    {#if !loggedIn}<span class="muted small">Log in to record your score on the leaderboard.</span>{/if}
+  </div>
+
+  {#if leaderboard.length}
+    <section class="card leaderboard">
+      <div class="card-heading"><h2>🏆 Leaderboard</h2><button class="button secondary small-btn" on:click={loadLeaderboard}>Refresh</button></div>
+      <ol class="lb-list">
+        {#each leaderboard as row, i (row.participant_id)}
+          <li><span class="lb-rank">{i + 1}</span><span class="lb-name">{row.display_name}</span><span class="lb-score">{row.score}</span></li>
+        {/each}
+      </ol>
+    </section>
+  {/if}
+
   <ol class="question-list">
     {#each challenges as question, index (question.id)}
+      {@const tier = challengeTier(question)}
       <li class="card">
         <div class="card-heading">
-          <span class="badge">Challenge {index + 1}{question.category ? ` · ${question.category}` : ""}</span>
+          <span class="badge">Challenge {index + 1}{question.category ? ` · ${question.category}` : ""} · {tier.points} pts</span>
           {#if solved[question.id]}<span class="solved">✓ Solved</span>{/if}
         </div>
         {#if question.title}<h2>{question.title}</h2>{/if}
@@ -66,8 +179,8 @@
           </details>
         {/if}
         {#if question.hint}
-          <details>
-            <summary>Need a hint?</summary>
+          <details on:toggle={(e) => revealHint(question, e)}>
+            <summary>Need a hint? <span class="hint-cost">(−{tier.hintCost} pts{hinted[question.id] ? ", already used" : ""})</span></summary>
             <p class="hint">{question.hint}</p>
             {#if question.toolUrl}
               <a class="button secondary tool-link" href={question.toolUrl} target="_blank" rel="noopener noreferrer">{question.toolLabel ?? "Open CyberChef ROT13 ↗"}</a>
@@ -86,7 +199,7 @@
               {#if errors[question.id]}<p class="feedback">{errors[question.id]}</p>{/if}
               {#if question.id in results}
                 <p class="feedback" class:correct={results[question.id]}>
-                  {results[question.id] ? "Correct! Challenge solved." : "Not quite. Check your flag and try again."}
+                  {results[question.id] ? `Correct! +${tier.points} points.` : "Not quite. Check your flag and try again."}
                 </p>
               {/if}
             </div>
@@ -95,12 +208,6 @@
       </li>
     {/each}
   </ol>
-{:else}
-  <section class="card empty-state">
-    <h2>Challenges coming soon</h2>
-    <p class="muted">Check back here for the workshop challenges.</p>
-    <a class="button secondary" href="/products">Back to the shop</a>
-  </section>
 {/if}
 
 <style>
@@ -134,6 +241,7 @@
 
   .card-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
   .solved, .correct { color: #8fdbab; }
+  .hint-cost { color: #e0a35a; font-size: 0.85em; }
   .ciphertext { display: grid; gap: 0.6rem; padding: 1.2rem; border: 1px solid #30394a; border-radius: 10px; background: #090c12; }
   .ciphertext code { font-size: clamp(1rem, 3vw, 1.3rem); overflow-wrap: anywhere; user-select: all; }
   details { margin-top: 1.5rem; }
@@ -144,4 +252,14 @@
   .flag-controls button { white-space: nowrap; }
   .feedback { margin-bottom: 0; }
   @media (max-width: 500px) { .flag-controls { flex-direction: column; } }
+
+  .score-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 1rem; }
+  .score-chip { background: #10151e; border: 1px solid #30394a; border-radius: 999px; padding: 0.4rem 1rem; }
+  .score-chip strong { color: #8fdbab; }
+  .leaderboard { margin-top: 1.5rem; }
+  .small-btn { margin: 0; padding: 0.3rem 0.8rem; font-size: 0.85rem; }
+  .lb-list { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: 0.4rem; }
+  .lb-list li { display: grid; grid-template-columns: 2rem 1fr auto; align-items: center; gap: 0.75rem; padding: 0.4rem 0.6rem; border-radius: 8px; background: #10151e; }
+  .lb-rank { color: #aab4c6; text-align: center; }
+  .lb-score { color: #8fdbab; font-variant-numeric: tabular-nums; }
 </style>

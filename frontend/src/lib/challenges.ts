@@ -14,6 +14,15 @@ export type Challenge = {
   answerHash?: string;
 };
 
+// Points for a solve and the cost of revealing the hint, by difficulty.
+// Kept in sync with the backend (routes/challenges.py CHALLENGES).
+export function challengeTier(c: Challenge): { label: string; points: number; hintCost: number } {
+  const cat = (c.category ?? "").toLowerCase();
+  if (cat.includes("hard")) return { label: "Hard", points: 200, hintCost: 50 };
+  if (cat.includes("medium")) return { label: "Medium", points: 100, hintCost: 25 };
+  return { label: "Easy", points: 50, hintCost: 10 }; // beginner / easy
+}
+
 // Browser-only checking hides plaintext answers, but is not tamper-proof grading.
 export const challenges: Challenge[] = [
   {

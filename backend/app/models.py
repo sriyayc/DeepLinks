@@ -69,3 +69,22 @@ class ChatLog(Base):
     question_key = Column(String(50), nullable=False)
     response = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class ChallengeEvent(Base):
+    """One scoring event for the CTF leaderboard: a solve (+points) or a hint
+    reveal (-points). One row per participant/challenge/kind."""
+
+    __tablename__ = "challenge_events"
+    __table_args__ = (
+        UniqueConstraint(
+            "participant_id", "challenge_id", "kind", name="uq_challenge_event"
+        ),
+    )
+
+    id = Column(Integer, primary_key=True)
+    participant_id = Column(Integer, ForeignKey("participants.id"), nullable=False, index=True)
+    challenge_id = Column(String(50), nullable=False)
+    kind = Column(String(10), nullable=False)  # 'solve' | 'hint'
+    points = Column(Integer, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
