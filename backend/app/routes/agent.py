@@ -3,15 +3,17 @@
 The assistant never executes links or external actions.
 """
 
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from ..auth import get_current_user
 from ..config import settings
 from ..database import get_db
-from ..models import Product
+from ..models import ChatLog, Participant, Product
 
 
 router = APIRouter(
@@ -288,6 +290,7 @@ def _complete(
 def chat_with_agent(
     body: ChatRequest,
     db: Session = Depends(get_db),
+    user: Participant = Depends(get_current_user),
 ):
 
     if not settings.GROQ_API_KEY:
@@ -297,6 +300,30 @@ def chat_with_agent(
             detail=(
                 "Groq is not configured "
                 "on the server."
+            ),
+        )
+
+
+    # Per-participant rolling rate limit (DB-backed so it survives restarts).
+    window_start = datetime.now(timezone.utc) - timedelta(
+        seconds=settings.CHAT_RATE_LIMIT_WINDOW_SECONDS
+    )
+    recent = (
+        db.query(ChatLog)
+        .filter(
+            ChatLog.participant_id == user.id,
+            ChatLog.created_at >= window_start,
+        )
+        .count()
+    )
+    if recent >= settings.CHAT_RATE_LIMIT_MAX:
+        minutes = max(1, settings.CHAT_RATE_LIMIT_WINDOW_SECONDS // 60)
+        raise HTTPException(
+            status_code=429,
+            detail=(
+                f"Message limit reached "
+                f"({settings.CHAT_RATE_LIMIT_MAX} per {minutes} min). "
+                "Please wait a little and try again."
             ),
         )
 
@@ -398,6 +425,16 @@ def chat_with_agent(
             "You can compare products at /products."
         )
 
+
+    # Record the exchange so the per-participant rate limit can count it.
+    db.add(
+        ChatLog(
+            participant_id=user.id,
+            question_key=body.message[:50],
+            response=reply,
+        )
+    )
+    db.commit()
 
     return ChatResponse(
         reply=reply,

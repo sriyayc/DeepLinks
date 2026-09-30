@@ -92,4 +92,27 @@ class Settings:
     )
 
 
+    # =====================================================
+    # SIMPLE WORKSHOP LOGIN
+    # =====================================================
+    # Shared password so participants can log in with just their numeric ID
+    # (1001-1150) + this password, instead of a long token link.
+    WORKSHOP_PASSWORD: str = os.getenv(
+        "WORKSHOP_PASSWORD",
+        "cybercart",
+    )
+
+
+    # =====================================================
+    # CHATBOT RATE LIMIT (per participant, rolling window)
+    # =====================================================
+    CHAT_RATE_LIMIT_MAX: int = int(
+        os.getenv("CHAT_RATE_LIMIT_MAX", "20")
+    )
+
+    CHAT_RATE_LIMIT_WINDOW_SECONDS: int = int(
+        os.getenv("CHAT_RATE_LIMIT_WINDOW_SECONDS", "600")
+    )
+
+
 settings = Settings()

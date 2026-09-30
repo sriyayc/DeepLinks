@@ -179,6 +179,8 @@
         {
           method: 'POST',
 
+          credentials: 'include',
+
           headers: {
             'Content-Type': 'application/json'
           },
@@ -193,6 +195,9 @@
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Please log in first to use the assistant.');
+        }
         throw new Error(
           typeof data.detail === 'string'
             ? data.detail

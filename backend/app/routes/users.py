@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -14,6 +15,37 @@ def login(token: str, response: Response, db: Session = Depends(get_db)):
     participant = db.query(Participant).filter(Participant.access_token == token).first()
     if not participant:
         raise HTTPException(status_code=401, detail="Invalid login token")
+
+    session_id = create_session(db, participant.id)
+    set_session_cookie(response, session_id)
+
+    return {
+        "participant_id": participant.id,
+        "display_name": participant.display_name,
+        "role": participant.role,
+        "message": "Login successful",
+    }
+
+
+class IdLoginRequest(BaseModel):
+    participant_id: int
+    password: str
+
+
+@router.post("/login-id")
+def login_with_id(body: IdLoginRequest, response: Response, db: Session = Depends(get_db)):
+    """Simple workshop login: numeric participant ID + a shared password.
+
+    Lets participants sign in with the number handed to them instead of a long
+    token link. The shared password means anyone who knows an ID can sign in as
+    it — acceptable for a workshop, and it does not affect any lab.
+    """
+    if body.password != settings.WORKSHOP_PASSWORD:
+        raise HTTPException(status_code=401, detail="Incorrect workshop password")
+
+    participant = db.query(Participant).filter(Participant.id == body.participant_id).first()
+    if not participant:
+        raise HTTPException(status_code=401, detail="Unknown participant ID")
 
     session_id = create_session(db, participant.id)
     set_session_cookie(response, session_id)
