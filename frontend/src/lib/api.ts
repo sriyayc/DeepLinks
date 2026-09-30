@@ -1,6 +1,10 @@
 import { env } from "$env/dynamic/public";
 
-export const publicApiBaseUrl = env.PUBLIC_API_BASE_URL || "http://localhost:8000";
+// Same-origin: browser API calls go to the frontend, which proxies /api to the
+// backend (see vite.config.ts). This keeps the shop session cookie first-party
+// and means participants only ever need the frontend URL. Intentionally not
+// read from env so a stale PUBLIC_API_BASE_URL can't force cross-origin calls.
+export const publicApiBaseUrl = "";
 
 // Public origin of the attacker/CSRF demo site. On Railway set
 // PUBLIC_ATTACKER_BASE_URL to the attacker-site service's public URL.
