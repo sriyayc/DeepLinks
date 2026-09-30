@@ -87,9 +87,9 @@
   }
 </script>
 
-<p class="eyebrow">WORKSHOP · LAB 1 · TASK 5</p>
+<p class="eyebrow">SIGN IN</p>
 <h1>Sign in with CyberID</h1>
-<p class="lead">Single sign-on demo — OAuth open redirect + PKCE.</p>
+<p class="lead">Sign in to CyberCart with your CyberID account.</p>
 
 {#if pkceMode}
   <div class="notice" class:vulnerable={!pkceMode.pkce_enforced}>
@@ -121,8 +121,7 @@
 </form>
 
 <p class="muted small" style="margin-top:0.75rem;">
-  Demo login — any username/password is accepted. This form exists to demonstrate the
-  OAuth open-redirect + PKCE lab; it does not check your password against anything.
+  Any username and password is accepted for this demo.
 </p>
 
 {#if status === "blocked"}

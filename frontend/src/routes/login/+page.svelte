@@ -100,7 +100,7 @@
   <section class="card">
     <h2 style="margin-top:0;">Or sign in with CyberID</h2>
     <p class="small muted" style="margin-top:0;">
-      Single sign-on through the CyberID provider — opens the Task 5 OAuth lab.
+      Sign in with your CyberID account.
     </p>
     <a class="button secondary" href="/lab/oauth">Sign in with CyberID ↗</a>
   </section>
